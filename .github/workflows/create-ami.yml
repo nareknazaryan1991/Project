@@ -1,0 +1,39 @@
+name: Create AMI
+
+on:
+  pull_request:
+    types:
+      - 'opened'
+      - 'synchronize'
+    branches:
+      - 'main'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build-ami:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Packer
+        run: |
+          wget https://releases.hashicorp.com/packer/1.7.5/packer_1.7.5_linux_amd64.zip
+          unzip packer_1.7.5_linux_amd64.zip
+          sudo mv packer /usr/local/bin/
+
+      - name: Packer Init
+        run: packer init .
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Run Packer
+        run: packer build -var 'postgres_root_user=${{ secrets.POSTGRES_ROOT_USER }}' -var 'postgres_root_pass=${{ secrets.POSTGRES_ROOT_PASS }}' packer.pkr.hcl
