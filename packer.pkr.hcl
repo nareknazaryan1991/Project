@@ -14,7 +14,7 @@ variable "postgres_root_pass" {}
 source "amazon-ebs" "ubuntu" {
   ami_name      = "ec2-db"
   instance_type = "t2.micro"
-  region        = "us-west-2"
+  region        = "us-west-1"
   profile       = "412999873787"
   source_ami_filter {
     filters = {
