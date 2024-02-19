@@ -1,0 +1,31 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 1.0.0
+
+    - name: Initialize Terraform
+      run: terraform init
+
+    - name: Plan
+      run: terraform plan -input=false -out=tfplan -var-file=terraform_config.yaml
+
+    - name: Apply
+      run: terraform apply -input=false tfplan
+
+    - name: Clean up
+      run: rm -rf .terraform tfplan
