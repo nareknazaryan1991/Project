@@ -1,47 +1,37 @@
-terraform:
-  backend:
-    s3:
-      bucket: "example-bucket"
-      key: "terraform.tfstate"
-      region: "us-east-1"
-  required_version: ">= 0.13"
+name: Terraform Deployment
 
-provider:
-  aws:
-    region: "us-west-1"
-    access_key: "${{ secrets.AWS_ACCESS_KEY_ID }}"
-    secret_key: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+on:
+  push:
+    branches:
+      - main
 
-resources:
-  - type: "aws_instance"
-    name: "terraform"
-    config:
-      ami: "ami-0781b2f5146911b9a"  # Updated AMI ID
-      instance_type: "t2.micro"
-      tags:
-        Name: "TerraformInstance"
-      count: 1
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
 
-  - type: "aws_s3_bucket"
-    name: "example_bucket"
-    config:
-      bucket: "example-bucket"
-      acl: "private"
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v2
 
-  - type: "aws_security_group"
-    name: "example_security_group"
-    config:
-      name: "example-sg"
-      description: "Example security group"
-      ingress:
-        - from_port: 80
-          to_port: 80
-          protocol: "tcp"
-          cidr_blocks:
-            - "0.0.0.0/0"
-      egress:
-        - from_port: 0
-          to_port: 0
-          protocol: "-1"
-          cidr_blocks:
-            - "0.0.0.0/0"
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 0.14.7
+
+    - name: Configure AWS Credentials
+      run: |
+        echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> $GITHUB_ENV
+        echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> $GITHUB_ENV
+
+    - name: Initialize Terraform
+      run: terraform init
+      working-directory: ./path/to/your/terraform/configuration
+
+    - name: Terraform Plan
+      run: terraform plan
+      working-directory: ./path/to/your/terraform/configuration
+
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: terraform apply -auto-approve
+      working-directory: ./path/to/your/terraform/configuration
