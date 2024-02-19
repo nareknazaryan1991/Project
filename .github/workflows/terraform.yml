@@ -1,31 +1,47 @@
-name: Terraform Apply
+terraform:
+  backend:
+    s3:
+      bucket: "example-bucket"
+      key: "terraform.tfstate"
+      region: "us-east-1"
+  required_version: ">= 0.13"
 
-on:
-  push:
-    branches:
-      - main
+provider:
+  aws:
+    region: "us-west-1"
+    access_key: "${{ secrets.AWS_ACCESS_KEY_ID }}"
+    secret_key: "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
 
-jobs:
-  terraform:
-    runs-on: ubuntu-latest
+resources:
+  - type: "aws_instance"
+    name: "terraform"
+    config:
+      ami: "ami-0781b2f5146911b9a"  # Updated AMI ID
+      instance_type: "t2.micro"
+      tags:
+        Name: "TerraformInstance"
+      count: 1
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+  - type: "aws_s3_bucket"
+    name: "example_bucket"
+    config:
+      bucket: "example-bucket"
+      acl: "private"
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
-      with:
-        terraform_version: 1.0.0
-
-    - name: Initialize Terraform
-      run: terraform init
-
-    - name: Plan
-      run: terraform plan -input=false -out=tfplan -var-file=terraform_config.yaml
-
-    - name: Apply
-      run: terraform apply -input=false tfplan
-
-    - name: Clean up
-      run: rm -rf .terraform tfplan
+  - type: "aws_security_group"
+    name: "example_security_group"
+    config:
+      name: "example-sg"
+      description: "Example security group"
+      ingress:
+        - from_port: 80
+          to_port: 80
+          protocol: "tcp"
+          cidr_blocks:
+            - "0.0.0.0/0"
+      egress:
+        - from_port: 0
+          to_port: 0
+          protocol: "-1"
+          cidr_blocks:
+            - "0.0.0.0/0"
