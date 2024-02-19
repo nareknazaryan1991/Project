@@ -22,9 +22,13 @@ jobs:
       - name: Terraform Init
         run: terraform init
       
-      - name: Terraform Plan
-        run: terraform plan -input=false
-      
       - name: Terraform Apply
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor == 'your_username'
-        run: terraform apply -input=false -auto-approve
+        run: |
+          terraform apply -input=false -auto-approve
+          echo "::set-output name=public_ip::$(terraform output public_ip)"
+      
+      - name: Use EC2 Public IP
+        run: |
+          echo "EC2 Public IP: ${{ steps.terraform.outputs.public_ip }}"
+          # Here you can perform actions using the public IP address of the EC2 instance
